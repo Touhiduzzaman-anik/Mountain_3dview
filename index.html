@@ -1,0 +1,1924 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Dev Days Dhaka 2026: The Summit of Innovation | Mount Everest 3D Experience</title>
+  <meta name="description" content="Cinematic scroll-driven 3D WebGL journey from Base Camp (5,364 m) to the Summit of Mount Everest (8,849 m) for Dev Days Dhaka 2026.">
+
+  <!-- Google Fonts: Archivo & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:ital,wght@0,300;0,400;0,600;0,900;1,900&family=JetBrains+Mono:wght@400;500;700;800&display=swap" rel="stylesheet">
+
+  <!-- Three.js (r128) CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+  <style>
+    /* =========================================================================
+       RESET & BASE STYLING (Brutalist-Minimalist Swiss / Cyber-Alpine Aesthetic)
+       ========================================================================= */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: #050811;
+      color: #E2E8F0;
+      font-family: 'Archivo', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    #webgl-canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 1;
+      display: block;
+      outline: none;
+    }
+
+    /* Subtle Film Grain & Vignette Overlay */
+    .vignette-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 2;
+      pointer-events: none;
+      background: radial-gradient(circle at 50% 50%, rgba(5, 8, 17, 0) 50%, rgba(5, 8, 17, 0.75) 100%);
+    }
+
+    /* Screen Grid / Crosshair Markers */
+    .crosshair-layer {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 3;
+      pointer-events: none;
+    }
+
+    .corner-bracket {
+      position: absolute;
+      width: 14px;
+      height: 14px;
+      border-color: rgba(255, 255, 255, 0.25);
+      border-style: solid;
+    }
+    .bracket-tl { top: 20px; left: 20px; border-width: 1.5px 0 0 1.5px; }
+    .bracket-tr { top: 20px; right: 20px; border-width: 1.5px 1.5px 0 0; }
+    .bracket-bl { bottom: 20px; left: 20px; border-width: 0 0 1.5px 1.5px; }
+    .bracket-br { bottom: 20px; right: 20px; border-width: 0 1.5px 1.5px 0; }
+
+    /* =========================================================================
+       HUD & TELEMETRY SYSTEMS
+       ========================================================================= */
+    .hud-layer {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 10;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 28px 36px;
+    }
+
+    /* Top Bar */
+    .hud-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      width: 100%;
+    }
+
+    /* Top Left Telemetry Panel */
+    .telemetry-box {
+      background: rgba(8, 13, 24, 0.72);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-left: 3px solid #38BDF8;
+      padding: 16px 20px;
+      border-radius: 2px;
+      pointer-events: auto;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+      min-width: 280px;
+    }
+
+    .telemetry-title {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: #94A3B8;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .telemetry-title::before {
+      content: '';
+      display: inline-block;
+      width: 6px;
+      height: 6px;
+      background: #38BDF8;
+      border-radius: 50%;
+      box-shadow: 0 0 8px #38BDF8;
+      animation: pulseGlow 1.8s infinite;
+    }
+
+    .altitude-readout {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 38px;
+      font-weight: 800;
+      color: #FFFFFF;
+      letter-spacing: -0.02em;
+      line-height: 1;
+      display: flex;
+      align-items: baseline;
+      gap: 4px;
+      text-shadow: 0 0 20px rgba(56, 189, 248, 0.25);
+    }
+
+    .altitude-unit {
+      font-size: 16px;
+      font-weight: 500;
+      color: #64748B;
+      letter-spacing: 0.05em;
+    }
+
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px 16px;
+      margin-top: 14px;
+      padding-top: 12px;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .metric-item {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .metric-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: #64748B;
+    }
+
+    .metric-val {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      font-weight: 700;
+      color: #E2E8F0;
+    }
+
+    /* Critical Hypoxia Alert Banner */
+    .hypoxia-warning {
+      display: none;
+      margin-top: 12px;
+      padding: 6px 10px;
+      background: rgba(239, 68, 68, 0.16);
+      border: 1px solid #EF4444;
+      border-radius: 2px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      color: #F87171;
+      text-transform: uppercase;
+      animation: alertFlash 1s infinite alternate;
+    }
+
+    @keyframes alertFlash {
+      from { background: rgba(239, 68, 68, 0.12); box-shadow: 0 0 0 rgba(239, 68, 68, 0); }
+      to { background: rgba(239, 68, 68, 0.32); box-shadow: 0 0 16px rgba(239, 68, 68, 0.4); }
+    }
+
+    /* Top Right Info & Chapter Marker */
+    .top-right-meta {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 8px;
+      pointer-events: auto;
+    }
+
+    .event-badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: #F8FAFC;
+      background: rgba(255, 255, 255, 0.06);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      padding: 8px 14px;
+      border-radius: 2px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .event-dot {
+      width: 6px;
+      height: 6px;
+      background: #F59E0B;
+      border-radius: 50%;
+      box-shadow: 0 0 8px #F59E0B;
+    }
+
+    .coordinates-pill {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.12em;
+      color: #94A3B8;
+      background: rgba(8, 13, 24, 0.65);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 6px 12px;
+      border-radius: 2px;
+    }
+
+    /* Interactive SVG Elevation Profile (Right Rail) */
+    .elevation-rail {
+      position: fixed;
+      right: 32px;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 12;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      pointer-events: auto;
+    }
+
+    .profile-card {
+      background: rgba(8, 13, 24, 0.72);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 2px;
+      padding: 16px 14px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    }
+
+    .profile-title {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: #64748B;
+      margin-bottom: 12px;
+      writing-mode: vertical-lr;
+      transform: rotate(180deg);
+    }
+
+    .profile-svg-wrap {
+      position: relative;
+      width: 44px;
+      height: 240px;
+    }
+
+    .elevation-svg {
+      width: 100%;
+      height: 100%;
+      overflow: visible;
+    }
+
+    .profile-track-line {
+      stroke: rgba(255, 255, 255, 0.18);
+      stroke-width: 2px;
+      stroke-dasharray: 2 3;
+      fill: none;
+    }
+
+    .profile-progress-line {
+      stroke: #38BDF8;
+      stroke-width: 2.5px;
+      fill: none;
+      filter: drop-shadow(0 0 4px #38BDF8);
+    }
+
+    .waypoint-node {
+      cursor: pointer;
+      transition: all 0.25s ease;
+    }
+
+    .waypoint-node circle {
+      fill: #0F172A;
+      stroke: #94A3B8;
+      stroke-width: 1.5px;
+      transition: all 0.2s ease;
+    }
+
+    .waypoint-node:hover circle,
+    .waypoint-node.active circle {
+      fill: #38BDF8;
+      stroke: #FFFFFF;
+      stroke-width: 2px;
+      filter: drop-shadow(0 0 6px #38BDF8);
+    }
+
+    /* Climber Pulsing Radar Beacon */
+    .climber-marker {
+      pointer-events: none;
+      transition: transform 0.1s linear;
+    }
+
+    .climber-core {
+      fill: #F59E0B;
+      stroke: #FFFFFF;
+      stroke-width: 1.5px;
+      filter: drop-shadow(0 0 8px #F59E0B);
+    }
+
+    .climber-ping {
+      fill: none;
+      stroke: #F59E0B;
+      stroke-width: 1.2px;
+      animation: pingRing 1.6s cubic-bezier(0, 0.2, 0.8, 1) infinite;
+    }
+
+    @keyframes pingRing {
+      0% { r: 3; opacity: 1; }
+      100% { r: 14; opacity: 0; }
+    }
+
+    /* Center Narrative Chapter Cards */
+    .narrative-container {
+      position: fixed;
+      bottom: 72px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 15;
+      width: min(720px, 88vw);
+      pointer-events: none;
+      display: flex;
+      justify-content: center;
+    }
+
+    .chapter-card {
+      position: absolute;
+      bottom: 0;
+      width: 100%;
+      background: rgba(6, 11, 22, 0.78);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 4px;
+      padding: 24px 28px;
+      box-shadow: 0 16px 48px rgba(0, 0, 0, 0.6);
+      opacity: 0;
+      transform: translateY(24px) scale(0.98);
+      transition: opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1), transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+      pointer-events: none;
+    }
+
+    .chapter-card.active {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+      pointer-events: auto;
+    }
+
+    .card-top-tag {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 0.16em;
+      color: #38BDF8;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .chapter-title {
+      font-size: 26px;
+      font-weight: 900;
+      color: #FFFFFF;
+      letter-spacing: -0.01em;
+      line-height: 1.15;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+    }
+
+    .chapter-subtitle {
+      font-size: 14px;
+      font-weight: 600;
+      color: #94A3B8;
+      letter-spacing: 0.04em;
+      margin-bottom: 12px;
+    }
+
+    .chapter-desc {
+      font-size: 13px;
+      line-height: 1.6;
+      color: #CBD5E1;
+      margin-bottom: 16px;
+    }
+
+    .chapter-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .chapter-tag {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      color: #94A3B8;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 4px 8px;
+      border-radius: 2px;
+    }
+
+    /* Bottom Status & Audio Controllers */
+    .hud-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      width: 100%;
+      pointer-events: auto;
+    }
+
+    .scroll-hint {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.16em;
+      color: #64748B;
+      text-transform: uppercase;
+    }
+
+    .mouse-icon {
+      width: 16px;
+      height: 24px;
+      border: 1.5px solid rgba(255, 255, 255, 0.3);
+      border-radius: 8px;
+      position: relative;
+    }
+
+    .mouse-wheel {
+      width: 2px;
+      height: 5px;
+      background: #38BDF8;
+      position: absolute;
+      top: 4px;
+      left: 50%;
+      transform: translateX(-50%);
+      border-radius: 1px;
+      animation: wheelBounce 1.6s infinite ease-in-out;
+    }
+
+    @keyframes wheelBounce {
+      0% { transform: translate(-50%, 0); opacity: 1; }
+      80% { transform: translate(-50%, 8px); opacity: 0; }
+      100% { transform: translate(-50%, 0); opacity: 0; }
+    }
+
+    /* Audio Equalizer & Sound Toggle Button */
+    .audio-btn {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(8, 13, 24, 0.72);
+      backdrop-filter: blur(14px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      padding: 8px 14px;
+      border-radius: 2px;
+      cursor: pointer;
+      transition: all 0.25s ease;
+    }
+
+    .audio-btn:hover {
+      background: rgba(15, 23, 42, 0.85);
+      border-color: rgba(56, 189, 248, 0.4);
+    }
+
+    .eq-bars {
+      display: flex;
+      align-items: flex-end;
+      gap: 2.5px;
+      height: 14px;
+    }
+
+    .eq-bar {
+      width: 2px;
+      background: #38BDF8;
+      border-radius: 1px;
+      height: 4px;
+      transition: height 0.15s ease;
+    }
+
+    .audio-btn.playing .eq-bar:nth-child(1) { animation: eqJump 0.8s infinite ease-in-out alternate; }
+    .audio-btn.playing .eq-bar:nth-child(2) { animation: eqJump 1.1s infinite 0.2s ease-in-out alternate; }
+    .audio-btn.playing .eq-bar:nth-child(3) { animation: eqJump 0.7s infinite 0.4s ease-in-out alternate; }
+    .audio-btn.playing .eq-bar:nth-child(4) { animation: eqJump 0.9s infinite 0.1s ease-in-out alternate; }
+
+    @keyframes eqJump {
+      0% { height: 3px; }
+      100% { height: 14px; }
+    }
+
+    .audio-btn-text {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      color: #CBD5E1;
+      text-transform: uppercase;
+    }
+
+    /* Overall Bottom Scroll Progress Bar */
+    .global-progress-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      height: 3px;
+      width: 0%;
+      background: linear-gradient(90deg, #38BDF8, #818CF8, #F59E0B);
+      z-index: 100;
+      box-shadow: 0 0 10px rgba(56, 189, 248, 0.6);
+      transition: width 0.08s linear;
+    }
+
+    /* WebGL Fallback Screen */
+    #nogl {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: #050811;
+      color: #F8FAFC;
+      z-index: 9999;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 32px;
+      text-align: center;
+    }
+
+    #nogl h1 {
+      font-size: 28px;
+      font-weight: 900;
+      margin-bottom: 12px;
+      color: #EF4444;
+    }
+
+    #nogl p {
+      max-width: 540px;
+      font-size: 15px;
+      line-height: 1.6;
+      color: #94A3B8;
+    }
+
+    @keyframes pulseGlow {
+      0% { opacity: 0.4; }
+      50% { opacity: 1; }
+      100% { opacity: 0.4; }
+    }
+
+    /* Mobile Responsive Adjustments */
+    @media (max-width: 768px) {
+      .hud-layer { padding: 16px 20px; }
+      .telemetry-box { min-width: 220px; padding: 12px 14px; }
+      .altitude-readout { font-size: 28px; }
+      .metrics-grid { gap: 8px 10px; margin-top: 10px; }
+      .elevation-rail { right: 12px; }
+      .narrative-container { bottom: 58px; width: 92vw; }
+      .chapter-title { font-size: 20px; }
+      .chapter-desc { font-size: 12px; }
+      .scroll-hint span { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- WebGL Canvas Container -->
+  <canvas id="webgl-canvas"></canvas>
+
+  <!-- Visual Polish Layers -->
+  <div class="vignette-overlay"></div>
+  <div class="crosshair-layer">
+    <div class="corner-bracket bracket-tl"></div>
+    <div class="corner-bracket bracket-tr"></div>
+    <div class="corner-bracket bracket-bl"></div>
+    <div class="corner-bracket bracket-br"></div>
+  </div>
+
+  <!-- HUD & Real-Time Telemetry System -->
+  <div class="hud-layer">
+    <!-- Header -->
+    <header class="hud-header">
+      <!-- Top Left: Telemetry Panel -->
+      <div class="telemetry-box">
+        <div class="telemetry-title">ASCENT TELEMETRY // EVEREST APEX</div>
+        <div class="altitude-readout">
+          <span id="alt-val">5,364</span>
+          <span class="altitude-unit">M</span>
+        </div>
+
+        <div class="metrics-grid">
+          <div class="metric-item">
+            <span class="metric-label">ASCENT V</span>
+            <span class="metric-val" id="vel-val">↑ 0.0 m/s</span>
+          </div>
+          <div class="metric-item">
+            <span class="metric-label">BAROMETRIC</span>
+            <span class="metric-val" id="press-val">530 hPa</span>
+          </div>
+          <div class="metric-item">
+            <span class="metric-label">O₂ SATURATION</span>
+            <span class="metric-val" id="o2-val">100%</span>
+          </div>
+          <div class="metric-item">
+            <span class="metric-label">TEMP AMBIENT</span>
+            <span class="metric-val" id="temp-val">-17°C</span>
+          </div>
+        </div>
+
+        <div class="hypoxia-warning" id="hypoxia-alert">
+          [ ! ] HYPOXIA CRITICAL // DEATH ZONE REALM
+        </div>
+      </div>
+
+      <!-- Top Right: Event & Waypoint Meta -->
+      <div class="top-right-meta">
+        <div class="event-badge">
+          <span class="event-dot"></span>
+          DEV DAYS DHAKA 2026
+        </div>
+        <div class="coordinates-pill" id="coord-val">
+          LAT: 27°59'17" N | LON: 86°51'05" E
+        </div>
+      </div>
+    </header>
+
+    <!-- Center Cinematic Narrative Chapter Cards -->
+    <div class="narrative-container">
+      <!-- Chapter 00 -->
+      <div class="chapter-card active" data-chapter="0">
+        <div class="card-top-tag">
+          <span>// CHAPTER 00</span>
+          <span>ALTITUDE: 5,364 M</span>
+        </div>
+        <h2 class="chapter-title">BASE CAMP: MORAINE THRESHOLD</h2>
+        <div class="chapter-subtitle">Architectural Foundations & Expedition Baseline</div>
+        <p class="chapter-desc">
+          At the foot of the Khumbu Glacier, 5,364 meters above sea level, every expedition begins with rigorous engineering preparation. Dev Days Dhaka 2026 gathers global technologists, cloud architects, and AI researchers to build unbreakable system foundations before ascending into extreme computational environments.
+        </p>
+        <div class="chapter-tags">
+          <span class="chapter-tag">DISTRIBUTED FOUNDATIONS</span>
+          <span class="chapter-tag">RELIABILITY BASELINE</span>
+          <span class="chapter-tag">KUBERNETES AT EDGE</span>
+        </div>
+      </div>
+
+      <!-- Chapter 01 -->
+      <div class="chapter-card" data-chapter="1">
+        <div class="card-top-tag">
+          <span>// CHAPTER 01</span>
+          <span>ALTITUDE: 5,800 M</span>
+        </div>
+        <h2 class="chapter-title">KHUMBU ICEFALL: SHATTERED LABYRINTH</h2>
+        <div class="chapter-subtitle">Dynamic Concurrency & Shifting Topology</div>
+        <p class="chapter-desc">
+          A colossal, shifting cascade of blue ice seracs and yawning bottomless crevasses. Surviving the Icefall demands rapid dynamic routing, low-latency failovers, and real-time obstacle avoidance—the ultimate physical metaphor for distributed concurrency and asynchronous event meshes.
+        </p>
+        <div class="chapter-tags">
+          <span class="chapter-tag">ASYNC CONCURRENCY</span>
+          <span class="chapter-tag">DYNAMIC ROUTING</span>
+          <span class="chapter-tag">RESILIENT BACKPRESSURE</span>
+        </div>
+      </div>
+
+      <!-- Chapter 02 -->
+      <div class="chapter-card" data-chapter="2">
+        <div class="card-top-tag">
+          <span>// CHAPTER 02</span>
+          <span>ALTITUDE: 6,400 M</span>
+        </div>
+        <h2 class="chapter-title">WESTERN CWM: VALLEY OF SILENCE</h2>
+        <div class="chapter-subtitle">Extreme Thermal Radiation & Scale Elasticity</div>
+        <p class="chapter-desc">
+          A vast, radiant amphitheater of ice guarded by the sheer walls of Everest, Lhotse, and Nuptse. Blinding solar radiation reflects off glacial snowfields, creating extreme thermal conditions where scalable cloud compute clusters must operate under peak algorithmic loads without throttling.
+        </p>
+        <div class="chapter-tags">
+          <span class="chapter-tag">ELASTIC CLOUD CLUSTERS</span>
+          <span class="chapter-tag">THERMAL BALANCING</span>
+          <span class="chapter-tag">ZERO-BOTTLENECK PIPELINES</span>
+        </div>
+      </div>
+
+      <!-- Chapter 03 -->
+      <div class="chapter-card" data-chapter="3">
+        <div class="card-top-tag">
+          <span>// CHAPTER 03</span>
+          <span>ALTITUDE: 7,200 M</span>
+        </div>
+        <h2 class="chapter-title">LHOTSE FACE: THE BLUE ICE WALL</h2>
+        <div class="chapter-subtitle">Sheer 50° Ascent & Frictionless Execution</div>
+        <p class="chapter-desc">
+          A 1,100-meter wall of vertical, solid blue glacial ice tilted at 50 degrees. Ascending requires relentless grip, fixed safety lines, and zero margin for computational friction. We engineer high-throughput GPU kernels and microsecond-latency inference pipelines that conquer sheer computational headwalls.
+        </p>
+        <div class="chapter-tags">
+          <span class="chapter-tag">GPU KERNEL OPT</span>
+          <span class="chapter-tag">LOW-LATENCY INFERENCE</span>
+          <span class="chapter-tag">VECTOR COMPILERS</span>
+        </div>
+      </div>
+
+      <!-- Chapter 04 -->
+      <div class="chapter-card" data-chapter="4">
+        <div class="card-top-tag">
+          <span>// CHAPTER 04</span>
+          <span>ALTITUDE: 8,000 M</span>
+        </div>
+        <h2 class="chapter-title">THE DEATH ZONE: THIN AIR REALM</h2>
+        <div class="chapter-subtitle">Hypoxia Threshold & Absolute Fault Isolation</div>
+        <p class="chapter-desc">
+          Beyond 8,000 meters, human cells starve for oxygen in 350 hPa air. Every instruction must be deterministic; a single dropped packet or unhandled exception is fatal. Here, Dev Days Dhaka 2026 showcases mission-critical autonomous architectures engineered for absolute fault isolation and cosmic resilience.
+        </p>
+        <div class="chapter-tags">
+          <span class="chapter-tag">BYZANTINE FAULT TOLERANCE</span>
+          <span class="chapter-tag">CHAOS HARDENING</span>
+          <span class="chapter-tag">MISSION CRITICAL 99.999%</span>
+        </div>
+      </div>
+
+      <!-- Chapter 05 -->
+      <div class="chapter-card" data-chapter="5">
+        <div class="card-top-tag">
+          <span>// CHAPTER 05</span>
+          <span>ALTITUDE: 8,849 M</span>
+        </div>
+        <h2 class="chapter-title">THE SUMMIT: APEX OF INNOVATION</h2>
+        <div class="chapter-subtitle">Dev Days Dhaka 2026 // Roof of the World</div>
+        <p class="chapter-desc">
+          8,849 meters. Standing upon the highest pinnacle on Planet Earth, looking out across an endless ocean of clouds as the golden Himalayan sun breaks over the horizon. Dev Days Dhaka 2026 crowns the global pioneers shaping the frontiers of artificial intelligence, planetary-scale networking, and human ingenuity.
+        </p>
+        <div class="chapter-tags">
+          <span class="chapter-tag">FRONTIER INTELLIGENCE</span>
+          <span class="chapter-tag">PLANETARY SCALE</span>
+          <span class="chapter-tag">DHAKA 2026 APEX</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="hud-footer">
+      <div class="scroll-hint">
+        <div class="mouse-icon">
+          <div class="mouse-wheel"></div>
+        </div>
+        <span>SCROLL / DRAG / KEYS TO ASCEND</span>
+      </div>
+
+      <div class="audio-btn" id="audio-toggle" title="Toggle Atmospheric Wind Audio">
+        <div class="eq-bars">
+          <div class="eq-bar"></div>
+          <div class="eq-bar"></div>
+          <div class="eq-bar"></div>
+          <div class="eq-bar"></div>
+        </div>
+        <span class="audio-btn-text" id="audio-status">ATMOSPHERE: OFF</span>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Interactive SVG Elevation Profile (Right Rail) -->
+  <aside class="elevation-rail">
+    <div class="profile-card">
+      <div class="profile-title">ELEVATION PROFILE</div>
+      <div class="profile-svg-wrap">
+        <svg class="elevation-svg" viewBox="0 0 44 240" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <!-- Background Profile Path -->
+          <path class="profile-track-line" d="M22 220 L22 20" />
+          <!-- Active Progress Line -->
+          <path class="profile-progress-line" id="svg-progress-line" d="M22 220 L22 220" />
+
+          <!-- Interactive Waypoint Nodes (0 to 5) -->
+          <!-- 0: Base Camp (5364m) -->
+          <g class="waypoint-node active" data-wp="0" transform="translate(22, 220)">
+            <circle cx="0" cy="0" r="4.5" />
+          </g>
+          <!-- 1: Khumbu Icefall (5800m) -->
+          <g class="waypoint-node" data-wp="1" transform="translate(22, 185)">
+            <circle cx="0" cy="0" r="4" />
+          </g>
+          <!-- 2: Western Cwm (6400m) -->
+          <g class="waypoint-node" data-wp="2" transform="translate(22, 142)">
+            <circle cx="0" cy="0" r="4" />
+          </g>
+          <!-- 3: Lhotse Face (7200m) -->
+          <g class="waypoint-node" data-wp="3" transform="translate(22, 98)">
+            <circle cx="0" cy="0" r="4" />
+          </g>
+          <!-- 4: Death Zone (8000m) -->
+          <g class="waypoint-node" data-wp="4" transform="translate(22, 52)">
+            <circle cx="0" cy="0" r="4" />
+          </g>
+          <!-- 5: Summit (8849m) -->
+          <g class="waypoint-node" data-wp="5" transform="translate(22, 20)">
+            <circle cx="0" cy="0" r="5" />
+          </g>
+
+          <!-- Real-Time Climber Beacon -->
+          <g class="climber-marker" id="climber-beacon" transform="translate(22, 220)">
+            <circle class="climber-ping" cx="0" cy="0" r="4" />
+            <circle class="climber-core" cx="0" cy="0" r="3.5" />
+          </g>
+        </svg>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Global Linear Progress Bar -->
+  <div class="global-progress-bar" id="progress-bar"></div>
+
+  <!-- Fallback Screen for No WebGL -->
+  <div id="nogl">
+    <h1>WEBGL ACCELERATION REQUIRED</h1>
+    <p>
+      Dev Days Dhaka 2026: The Summit of Innovation requires WebGL and hardware acceleration to compute procedural mountain mathematics and real-time volumetric atmospheric scattering. Please enable WebGL in your browser settings to experience the ascent.
+    </p>
+  </div>
+
+  <!-- Hidden YouTube Audio Engine (cYUb-df5vn8) -->
+  <div id="yt-player-container" style="position: absolute; left: -9999px; top: -9999px; width: 1px; height: 1px; overflow: hidden; pointer-events: none;">
+    <iframe id="yt-audio" width="10" height="10" src="https://www.youtube.com/embed/cYUb-df5vn8?enablejsapi=1&loop=1&playlist=cYUb-df5vn8&playsinline=1" frameborder="0" allow="autoplay"></iframe>
+  </div>
+
+  <!-- =========================================================================
+       THREE.JS APPLICATION LOGIC & GLSL PROCEDURAL SHADERS
+       ========================================================================= -->
+  <script>
+    // Verify WebGL availability
+    function isWebGLAvailable() {
+      try {
+        const canvas = document.createElement('canvas');
+        return !!(window.WebGLRenderingContext && (canvas.getContext('webgl') || canvas.getContext('experimental-webgl')));
+      } catch (e) {
+        return false;
+      }
+    }
+
+    if (!isWebGLAvailable()) {
+      document.getElementById('nogl').style.display = 'flex';
+      throw new Error("WebGL Not Supported");
+    }
+
+    /* -------------------------------------------------------------------------
+       1. PROCEDURAL TERRAIN MATHEMATICAL SCULPTING (CPU & GPU SYNCHRONIZED)
+       ------------------------------------------------------------------------- */
+    // Deterministic pseudo-random gradient noise
+    function hash2D(x, z) {
+      const s1 = Math.sin(x * 127.1 + z * 311.7) * 43758.5453123;
+      const s2 = Math.sin(x * 269.5 + z * 183.3) * 43758.5453123;
+      return [
+        (s1 - Math.floor(s1)) * 2.0 - 1.0,
+        (s2 - Math.floor(s2)) * 2.0 - 1.0
+      ];
+    }
+
+    function smoothNoise2D(x, z) {
+      const ix = Math.floor(x);
+      const iz = Math.floor(z);
+      const fx = x - ix;
+      const fz = z - iz;
+
+      // Cubic hermite interpolation
+      const ux = fx * fx * (3.0 - 2.0 * fx);
+      const uz = fz * fz * (3.0 - 2.0 * fz);
+
+      const d00 = hash2D(ix, iz);
+      const d10 = hash2D(ix + 1, iz);
+      const d01 = hash2D(ix, iz + 1);
+      const d11 = hash2D(ix + 1, iz + 1);
+
+      const v00 = d00[0] * fx + d00[1] * fz;
+      const v10 = d10[0] * (fx - 1.0) + d10[1] * fz;
+      const v01 = d01[0] * fx + d01[1] * (fz - 1.0);
+      const v11 = d11[0] * (fx - 1.0) + d11[1] * (fz - 1.0);
+
+      const x0 = v00 + ux * (v10 - v00);
+      const x1 = v01 + ux * (v11 - v01);
+      return x0 + uz * (x1 - x0);
+    }
+
+    function fbmTerrain(x, z, octaves) {
+      let val = 0.0;
+      let amp = 1.0;
+      let freq = 1.0;
+      for (let i = 0; i < octaves; i++) {
+        val += smoothNoise2D(x * freq, z * freq) * amp;
+        freq *= 2.04;
+        amp *= 0.48;
+      }
+      return val;
+    }
+
+    // Precise continuous elevation function capturing the 6 distinct Everest zones
+    function getTerrainElevation(x, z) {
+      // Natural serpentine curve of the ascent path through the Western Cwm & ridgeline
+      const routeX = 35.0 * Math.sin(z * 0.007) - 16.0 * Math.cos(z * 0.014);
+      const distFromRoute = Math.abs(x - routeX);
+
+      let baseElevation = 24.0; // Base Camp moraine floor
+
+      if (z > 230) {
+        // [00: BASE CAMP] (z: 230 to 400) - Broad alluvial moraine with glacial hummocks
+        const t = Math.max(0, Math.min(1, (380 - z) / 150));
+        baseElevation = 24.0 + t * 28.0;
+        // Moraine gravel mounds & frozen ponds
+        baseElevation += (Math.sin(x * 0.07) * Math.cos(z * 0.07)) * 4.5;
+        baseElevation += fbmTerrain(x * 0.04, z * 0.04, 3) * 6.0;
+      } else if (z > 90) {
+        // [01: KHUMBU ICEFALL] (z: 90 to 230) - Shattered labyrinth: towering seracs & gaping crevasses
+        const t = (230 - z) / 140;
+        baseElevation = 52.0 + t * 56.0;
+        // Chaotic vertical serac blocks
+        const seracJumble = Math.abs(smoothNoise2D(x * 0.09, z * 0.09)) * 16.0;
+        // Yawning crevasses cuts
+        const crevasseSlit = (Math.sin(z * 0.16 + x * 0.04) < -0.72) ? -14.0 : 0.0;
+        baseElevation += seracJumble + crevasseSlit;
+      } else if (z > -80) {
+        // [02: WESTERN CWM] (z: -80 to 90) - Valley of Silence: Concave reflective snow basin
+        const t = (90 - z) / 170;
+        baseElevation = 108.0 + t * 44.0;
+        // Concave glacial trough depression
+        const bowlEffect = Math.pow(distFromRoute * 0.018, 2.0) * 12.0;
+        baseElevation += bowlEffect + fbmTerrain(x * 0.03, z * 0.03, 3) * 3.5;
+      } else if (z > -220) {
+        // [03: LHOTSE FACE] (z: -220 to -80) - Sheer 50-degree icy headwall
+        const t = (-80 - z) / 140;
+        baseElevation = 152.0 + Math.pow(t, 0.92) * 78.0;
+        // Deep icy flutings and vertical couloirs
+        baseElevation += Math.sin(x * 0.14) * 6.0 + fbmTerrain(x * 0.06, z * 0.06, 3) * 4.0;
+      } else if (z > -310) {
+        // [04: DEATH ZONE & SOUTH COL] (z: -310 to -220) - High windswept saddle & knife-edge ridge
+        const t = (-220 - z) / 90;
+        baseElevation = 230.0 + t * 24.0;
+        baseElevation += fbmTerrain(x * 0.05, z * 0.05, 4) * 5.0;
+      } else {
+        // [05: HILLARY STEP & SUMMIT] (z: -380 to -310) - Razor-sharp arête & pyramid peak
+        const t = Math.min(1.0, (-310 - z) / 60);
+        baseElevation = 254.0 + t * 22.0;
+        // Pyramid pinnacle topping out at (0, 278, -365)
+        const distSummit = Math.hypot(x - 0.0, z - (-365.0));
+        if (distSummit < 45.0) {
+          baseElevation += Math.max(0.0, (45.0 - distSummit) * 0.65);
+        }
+      }
+
+      // Enclosing Himalayan Massifs (Nuptse, Lhotse, Pumori flanking the valley corridor)
+      const valleyWidth = (z > 230) ? 68.0 : (z > 90) ? 46.0 : (z > -80) ? 76.0 : (z > -220) ? 42.0 : 26.0;
+      if (distFromRoute > valleyWidth) {
+        const wallOffset = distFromRoute - valleyWidth;
+        baseElevation += Math.pow(wallOffset * 0.36, 1.38) * 1.85;
+      }
+
+      // High-frequency mountain arête cragginess
+      const ridgeNoise = Math.sin(x * 0.024 + 1.2) * Math.cos(z * 0.024 + 0.8) * 10.0;
+      return Math.min(315.0, baseElevation + ridgeNoise);
+    }
+
+    /* -------------------------------------------------------------------------
+       2. THREE.JS INITIALIZATION & SCENE GRAPH
+       ------------------------------------------------------------------------- */
+    const canvas = document.getElementById('webgl-canvas');
+    const renderer = new THREE.WebGLRenderer({
+      canvas: canvas,
+      antialias: true,
+      powerPreference: 'high-performance'
+    });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.15;
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+    const scene = new THREE.Scene();
+    scene.fog = new THREE.FogExp2(0x131A2A, 0.0018);
+
+    const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.5, 3000);
+
+    /* -------------------------------------------------------------------------
+       3. PROCEDURAL TERRAIN MESH & TRI-PLANAR GLSL SHADER
+       ------------------------------------------------------------------------- */
+    const terrainSize = 850;
+    const terrainSegs = 256;
+    const terrainGeo = new THREE.PlaneGeometry(terrainSize, terrainSize, terrainSegs, terrainSegs);
+    // Orient horizontally on XZ plane
+    terrainGeo.rotateX(-Math.PI / 2);
+
+    // Sculpt terrain vertices on CPU for 100% precision collision & anchor matching
+    const posAttr = terrainGeo.attributes.position;
+    for (let i = 0; i < posAttr.count; i++) {
+      const vx = posAttr.getX(i);
+      const vz = posAttr.getZ(i);
+      const vy = getTerrainElevation(vx, vz);
+      posAttr.setY(i, vy);
+    }
+    terrainGeo.computeVertexNormals();
+
+    // Custom Physically-Inspired Multi-Band Tri-Planar Shader
+    const terrainUniforms = {
+      uSunDir: { value: new THREE.Vector3(0.6, 0.7, 0.4).normalize() },
+      uSunColor: { value: new THREE.Color(0xFFF4E0) },
+      uSkyColor: { value: new THREE.Color(0x3B82F6) },
+      uFogColor: { value: new THREE.Color(0x131A2A) },
+      uFogDensity: { value: 0.0018 },
+      uAltitudeProgress: { value: 0.0 },
+      uTime: { value: 0.0 }
+    };
+
+    const terrainMat = new THREE.ShaderMaterial({
+      uniforms: terrainUniforms,
+      vertexShader: `
+        varying vec3 vWorldPosition;
+        varying vec3 vNormal;
+        varying vec3 vViewPosition;
+        varying float vElevation;
+
+        void main() {
+          vNormal = normalize(normalMatrix * normal);
+          vec4 worldPos = modelMatrix * vec4(position, 1.0);
+          vWorldPosition = worldPos.xyz;
+          vElevation = position.y;
+          vec4 mvPosition = viewMatrix * worldPos;
+          vViewPosition = -mvPosition.xyz;
+          gl_Position = projectionMatrix * mvPosition;
+        }
+      `,
+      fragmentShader: `
+        uniform vec3 uSunDir;
+        uniform vec3 uSunColor;
+        uniform vec3 uSkyColor;
+        uniform vec3 uFogColor;
+        uniform float uFogDensity;
+        uniform float uAltitudeProgress;
+        uniform float uTime;
+
+        varying vec3 vWorldPosition;
+        varying vec3 vNormal;
+        varying vec3 vViewPosition;
+        varying float vElevation;
+
+        // Procedural 3D noise for rock strata & firn snow sparkle
+        float hash31(vec3 p) {
+          p = fract(p * 0.3183099 + 0.1);
+          p *= 17.0;
+          return fract(p.x * p.y * p.z * (p.x + p.y + p.z));
+        }
+
+        float noise3D(vec3 x) {
+          vec3 p = floor(x);
+          vec3 w = fract(x);
+          vec3 u = w * w * (3.0 - 2.0 * w);
+          return mix(
+            mix(mix(hash31(p + vec3(0,0,0)), hash31(p + vec3(1,0,0)), u.x),
+                mix(hash31(p + vec3(0,1,0)), hash31(p + vec3(1,1,0)), u.x), u.y),
+            mix(mix(hash31(p + vec3(0,0,1)), hash31(p + vec3(1,0,1)), u.x),
+                mix(hash31(p + vec3(0,1,1)), hash31(p + vec3(1,1,1)), u.x), u.y), u.z);
+        }
+
+        void main() {
+          vec3 N = normalize(vNormal);
+          vec3 V = normalize(vViewPosition);
+          vec3 L = normalize(uSunDir);
+          vec3 H = normalize(L + V);
+
+          // Slope factor: 1.0 = vertical precipice, 0.0 = flat snowfield
+          float slope = 1.0 - max(N.y, 0.0);
+
+          // 1. STEEP CLIFFS (>55° slope): Dark, fractured metamorphic gneiss/shale
+          float rockNoise = noise3D(vWorldPosition * 0.14) * 0.6 + noise3D(vWorldPosition * 0.4) * 0.4;
+          float strata = sin(vWorldPosition.y * 1.6 + rockNoise * 4.0) * 0.5 + 0.5;
+          vec3 rockDark = vec3(0.09, 0.09, 0.11);
+          vec3 rockMid  = vec3(0.18, 0.17, 0.20);
+          vec3 rockWarm = vec3(0.24, 0.21, 0.19);
+          vec3 rockColor = mix(rockDark, rockMid, strata);
+          rockColor = mix(rockColor, rockWarm, rockNoise * 0.35);
+
+          // 2. MID-SLOPE (30° - 55°): Subsurface translucent blue glacial ice
+          float iceNoise = noise3D(vWorldPosition * 0.07);
+          vec3 baseIce = vec3(0.08, 0.45, 0.65);
+          vec3 deepIce = vec3(0.03, 0.26, 0.46);
+          vec3 iceColor = mix(deepIce, baseIce, iceNoise * 0.5 + 0.5);
+          // View-dependent Fresnel glow
+          float fresnel = pow(1.0 - max(dot(N, V), 0.0), 3.0);
+          iceColor += vec3(0.25, 0.70, 0.98) * fresnel * 0.8;
+
+          // 3. PLATEAUS & RIDGES (<30°): Wind-packed granular firn snow
+          float snowSparkle = noise3D(vWorldPosition * 2.8);
+          float microRoughness = noise3D(vWorldPosition * 0.2) * 0.05;
+          vec3 snowBase = vec3(0.93, 0.96, 1.0) - microRoughness;
+          // Directional sparkling highlight
+          float specDot = max(dot(N, H), 0.0);
+          float sparkle = pow(specDot, 64.0) * step(0.68, snowSparkle) * 1.7;
+          vec3 snowColor = snowBase + vec3(1.0, 0.98, 0.92) * sparkle;
+
+          // Multi-band slope blending
+          float snowWeight = smoothstep(0.46, 0.22, slope);
+          float iceWeight  = smoothstep(0.62, 0.36, slope) * (1.0 - snowWeight);
+          float rockWeight = 1.0 - snowWeight - iceWeight;
+
+          vec3 surfaceAlbedo = rockColor * rockWeight + iceColor * iceWeight + snowColor * snowWeight;
+
+          // Lighting calculations
+          float NdotL = max(dot(N, L), 0.0);
+          vec3 ambient = mix(vec3(0.05, 0.07, 0.12), uSkyColor * 0.35, max(N.y, 0.0));
+          float wrapL = max((dot(N, L) + 0.25) / 1.25, 0.0);
+          vec3 direct = uSunColor * (wrapL * 1.2);
+
+          // Specular highlights
+          float specPower = mix(16.0, 64.0, snowWeight);
+          float spec = pow(max(dot(N, H), 0.0), specPower) * (snowWeight * 0.75 + iceWeight * 0.9 + rockWeight * 0.12);
+
+          vec3 finalColor = surfaceAlbedo * (ambient + direct) + uSunColor * spec * 0.42;
+
+          // Dynamic distance fog
+          float dist = length(vViewPosition);
+          float fogFactor = 1.0 - exp(-pow(dist * uFogDensity, 1.45));
+          finalColor = mix(finalColor, uFogColor, clamp(fogFactor, 0.0, 1.0));
+
+          gl_FragColor = vec4(finalColor, 1.0);
+        }
+      `
+    });
+
+    const terrainMesh = new THREE.Mesh(terrainGeo, terrainMat);
+    terrainMesh.receiveShadow = true;
+    scene.add(terrainMesh);
+
+    /* -------------------------------------------------------------------------
+       4. PROCEDURAL RAYLEIGH & MIE SKY DOME SHADER
+       ------------------------------------------------------------------------- */
+    const skyGeo = new THREE.SphereGeometry(1800, 32, 24);
+    const skyUniforms = {
+      uSunDir: { value: new THREE.Vector3(0.6, 0.7, 0.4).normalize() },
+      uAltitude: { value: 0.0 },
+      uTime: { value: 0.0 }
+    };
+
+    const skyMat = new THREE.ShaderMaterial({
+      uniforms: skyUniforms,
+      side: THREE.BackSide,
+      vertexShader: `
+        varying vec3 vWorldPos;
+        void main() {
+          vWorldPos = position;
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+      `,
+      fragmentShader: `
+        uniform vec3 uSunDir;
+        uniform float uAltitude;
+        uniform float uTime;
+        varying vec3 vWorldPos;
+
+        // Starfield noise
+        float hash21(vec2 p) {
+          p = fract(p * vec2(234.34, 435.345));
+          p += dot(p, p + 34.23);
+          return fract(p.x * p.y);
+        }
+
+        void main() {
+          vec3 dir = normalize(vWorldPos);
+          float sunDot = max(dot(dir, uSunDir), 0.0);
+          float heightFactor = clamp(dir.y, 0.0, 1.0);
+
+          // 1. BASE CAMP (5,364m): Pre-dawn violet-indigo (#1A162B) with soft amber horizon (#E07A5F)
+          vec3 baseZenith  = vec3(0.102, 0.086, 0.169); // #1A162B
+          vec3 baseHorizon = vec3(0.878, 0.478, 0.373); // #E07A5F
+          vec3 skyBase = mix(baseHorizon, baseZenith, pow(heightFactor, 0.4));
+
+          // 2. WESTERN CWM (6,400m): High-albedo solar glare & azure sky
+          vec3 cwmZenith  = vec3(0.06, 0.18, 0.45);
+          vec3 cwmHorizon = vec3(0.72, 0.85, 0.96);
+          vec3 skyCwm = mix(cwmHorizon, cwmZenith, pow(heightFactor, 0.45));
+
+          // 3. DEATH ZONE (>8,000m): Deep cosmic void indigo (#050811) with starry twinkling
+          vec3 deathZenith  = vec3(0.02, 0.031, 0.067); // #050811
+          vec3 deathHorizon = vec3(0.12, 0.18, 0.32);
+          vec3 skyDeath = mix(deathHorizon, deathZenith, pow(heightFactor, 0.5));
+
+          // 4. THE SUMMIT (8,849m): Golden-hour Himalayan sunrise
+          vec3 summitZenith  = vec3(0.04, 0.06, 0.14);
+          vec3 summitHorizon = vec3(0.98, 0.68, 0.28);
+          vec3 skySummit = mix(summitHorizon, summitZenith, pow(heightFactor, 0.35));
+
+          // Interpolate sky based on altitude progress (0.0 to 1.0)
+          vec3 skyCol;
+          if (uAltitude < 0.35) {
+            skyCol = mix(skyBase, skyCwm, uAltitude / 0.35);
+          } else if (uAltitude < 0.75) {
+            skyCol = mix(skyCwm, skyDeath, (uAltitude - 0.35) / 0.40);
+          } else {
+            skyCol = mix(skyDeath, skySummit, (uAltitude - 0.75) / 0.25);
+          }
+
+          // Blinding Solar Disk & Mie Corona
+          float sunDisk = smoothstep(0.9985, 0.9998, sunDot);
+          float sunCorona = pow(sunDot, 128.0) * 1.6 + pow(sunDot, 12.0) * 0.45;
+          vec3 sunColor = vec3(1.0, 0.95, 0.85) * (sunDisk * 5.0 + sunCorona);
+
+          // Starfield in thin air (emerges past Western Cwm into Death Zone)
+          float starWeight = smoothstep(0.55, 0.95, uAltitude) * smoothstep(0.2, 0.8, heightFactor);
+          if (starWeight > 0.01) {
+            vec2 starCoord = dir.xz / (dir.y + 0.1) * 350.0;
+            float starHash = hash21(floor(starCoord));
+            float twinkle = sin(uTime * 3.0 + starHash * 30.0) * 0.5 + 0.5;
+            float star = step(0.988, starHash) * twinkle;
+            skyCol += vec3(star) * starWeight * 1.5;
+          }
+
+          gl_FragColor = vec4(skyCol + sunColor, 1.0);
+        }
+      `
+    });
+
+    const skyMesh = new THREE.Mesh(skyGeo, skyMat);
+    scene.add(skyMesh);
+
+    /* -------------------------------------------------------------------------
+       5. VOLUMETRIC BLIZZARD & SPINDRIFT GPU PARTICLE SYSTEM (5,000 PARTICLES)
+       ------------------------------------------------------------------------- */
+    const particleCount = 5000;
+    const particleGeo = new THREE.BufferGeometry();
+    const pPositions = new Float32Array(particleCount * 3);
+    const pVelocities = new Float32Array(particleCount * 3);
+    const pSizes = new Float32Array(particleCount);
+    const pAlphas = new Float32Array(particleCount);
+
+    const boxExtent = { x: 120, y: 70, z: 120 };
+
+    for (let i = 0; i < particleCount; i++) {
+      pPositions[i * 3 + 0] = (Math.random() - 0.5) * boxExtent.x;
+      pPositions[i * 3 + 1] = (Math.random() - 0.5) * boxExtent.y;
+      pPositions[i * 3 + 2] = (Math.random() - 0.5) * boxExtent.z;
+
+      pVelocities[i * 3 + 0] = -12.0 - Math.random() * 15.0; // Spindrift wind shear
+      pVelocities[i * 3 + 1] = -4.0 - Math.random() * 5.0;
+      pVelocities[i * 3 + 2] = -5.0 - Math.random() * 8.0;
+
+      pSizes[i] = 1.2 + Math.random() * 2.8;
+      pAlphas[i] = 0.35 + Math.random() * 0.65;
+    }
+
+    particleGeo.setAttribute('position', new THREE.BufferAttribute(pPositions, 3));
+    particleGeo.setAttribute('velocity', new THREE.BufferAttribute(pVelocities, 3));
+    particleGeo.setAttribute('size', new THREE.BufferAttribute(pSizes, 1));
+    particleGeo.setAttribute('alpha', new THREE.BufferAttribute(pAlphas, 1));
+
+    const blizzardUniforms = {
+      uCamPos: { value: new THREE.Vector3() },
+      uBox: { value: new THREE.Vector3(boxExtent.x, boxExtent.y, boxExtent.z) },
+      uWindShear: { value: 1.0 },
+      uMouseParallax: { value: new THREE.Vector2(0, 0) },
+      uTime: { value: 0.0 }
+    };
+
+    const blizzardMat = new THREE.ShaderMaterial({
+      uniforms: blizzardUniforms,
+      transparent: true,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+      vertexShader: `
+        attribute vec3 velocity;
+        attribute float size;
+        attribute float alpha;
+
+        uniform vec3 uCamPos;
+        uniform vec3 uBox;
+        uniform float uWindShear;
+        uniform vec2 uMouseParallax;
+        uniform float uTime;
+
+        varying float vAlpha;
+
+        void main() {
+          vAlpha = alpha;
+          vec3 pos = position + velocity * uTime * uWindShear;
+          pos.x += uMouseParallax.x * 14.0;
+          pos.y += uMouseParallax.y * 8.0;
+
+          // Wrap particles continuously inside moving bounding volume centered on camera
+          vec3 relPos = pos - uCamPos;
+          relPos = mod(relPos + uBox * 0.5, uBox) - uBox * 0.5;
+          vec3 worldPos = uCamPos + relPos;
+
+          vec4 mvPos = viewMatrix * vec4(worldPos, 1.0);
+          gl_Position = projectionMatrix * mvPos;
+
+          // Size attenuation by distance
+          gl_PointSize = size * (240.0 / -mvPos.z);
+        }
+      `,
+      fragmentShader: `
+        varying float vAlpha;
+
+        void main() {
+          // Soft Gaussian snowflake circle
+          vec2 coord = gl_PointCoord - vec2(0.5);
+          float dist = length(coord);
+          if (dist > 0.5) discard;
+          float intensity = smoothstep(0.5, 0.0, dist) * vAlpha;
+          gl_FragColor = vec4(0.92, 0.96, 1.0, intensity * 0.8);
+        }
+      `
+    });
+
+    const blizzardParticles = new THREE.Points(particleGeo, blizzardMat);
+    scene.add(blizzardParticles);
+
+    /* -------------------------------------------------------------------------
+       6. PROCEDURAL EXPEDITION 3D PROPS & WORLD-BUILDING
+       ------------------------------------------------------------------------- */
+    const propsGroup = new THREE.Group();
+    scene.add(propsGroup);
+
+    // [PROP SET A: BASE CAMP TENTS, CHORTENS & PRAYER FLAGS]
+    const baseCampZ = 330;
+    const tentColors = [0xFFC107, 0xFF5722, 0xF59E0B, 0xEF4444];
+
+    // Dome tent geometry (faceted geodesic half-sphere)
+    const tentGeo = new THREE.SphereGeometry(2.2, 7, 5, 0, Math.PI * 2, 0, Math.PI * 0.54);
+    tentGeo.scale(1.0, 0.85, 1.2);
+
+    for (let i = 0; i < 14; i++) {
+      const tx = 10.0 + (Math.sin(i * 1.7) * 22.0) + (i % 3) * 6.0;
+      const tz = baseCampZ + (Math.cos(i * 2.1) * 20.0);
+      const ty = getTerrainElevation(tx, tz);
+
+      const tentMat = new THREE.MeshStandardMaterial({
+        color: tentColors[i % tentColors.length],
+        roughness: 0.6,
+        metalness: 0.1,
+        flatShading: true
+      });
+      const tentMesh = new THREE.Mesh(tentGeo, tentMat);
+      tentMesh.position.set(tx, ty, tz);
+      tentMesh.rotation.y = Math.sin(i) * Math.PI;
+      propsGroup.add(tentMesh);
+
+      // Internal warm translucent tent emission glow
+      if (i % 3 === 0) {
+        const tentLight = new THREE.PointLight(0xFFA726, 1.8, 16);
+        tentLight.position.set(tx, ty + 1.2, tz);
+        propsGroup.add(tentLight);
+      }
+    }
+
+    // Procedural Chortens (Stone stupas at Base Camp)
+    function createChorten(cx, cz) {
+      const cy = getTerrainElevation(cx, cz);
+      const chorten = new THREE.Group();
+      chorten.position.set(cx, cy, cz);
+
+      const stoneMat = new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.9 });
+      const baseMesh = new THREE.Mesh(new THREE.BoxGeometry(3.5, 1.2, 3.5), stoneMat);
+      baseMesh.position.y = 0.6;
+      chorten.add(baseMesh);
+
+      const drumMesh = new THREE.Mesh(new THREE.CylinderGeometry(1.4, 1.6, 2.0, 8), stoneMat);
+      drumMesh.position.y = 2.2;
+      chorten.add(drumMesh);
+
+      const spireMesh = new THREE.Mesh(new THREE.ConeGeometry(0.8, 2.4, 8), new THREE.MeshStandardMaterial({ color: 0xD97706, roughness: 0.4, metalness: 0.6 }));
+      spireMesh.position.y = 4.4;
+      chorten.add(spireMesh);
+
+      propsGroup.add(chorten);
+      return new THREE.Vector3(cx, cy + 4.8, cz);
+    }
+
+    const chortenP1 = createChorten(2, baseCampZ - 8);
+    const chortenP2 = createChorten(32, baseCampZ + 12);
+
+    // Fluttering Prayer Flag Lines
+    function createPrayerFlagLine(pStart, pEnd) {
+      const flagCount = 28;
+      const flagColors = [0x2563EB, 0xF8FAFC, 0xDC2626, 0x16A34A, 0xFBBF24]; // Blue, White, Red, Green, Yellow
+      const flagGeo = new THREE.PlaneGeometry(0.5, 0.4);
+
+      for (let i = 0; i < flagCount; i++) {
+        const frac = (i + 1) / (flagCount + 1);
+        const fx = THREE.MathUtils.lerp(pStart.x, pEnd.x, frac);
+        const fz = THREE.MathUtils.lerp(pStart.z, pEnd.z, frac);
+        // Catenary rope droop curve
+        const droop = Math.sin(frac * Math.PI) * 2.8;
+        const fy = THREE.MathUtils.lerp(pStart.y, pEnd.y, frac) - droop;
+
+        const flagMat = new THREE.MeshBasicMaterial({
+          color: flagColors[i % flagColors.length],
+          side: THREE.DoubleSide
+        });
+        const flag = new THREE.Mesh(flagGeo, flagMat);
+        flag.position.set(fx, fy, fz);
+        flag.rotation.y = Math.atan2(pEnd.x - pStart.x, pEnd.z - pStart.z);
+        flag.rotation.x = 0.2;
+        propsGroup.add(flag);
+      }
+    }
+    createPrayerFlagLine(chortenP1, chortenP2);
+
+    // [PROP SET B: KHUMBU ICEFALL ALUMINUM LADDER BRIDGES]
+    const icefallLadderZ = 175;
+    const ladderX = 18;
+    const ladderY = getTerrainElevation(ladderX, icefallLadderZ);
+
+    const ladderGroup = new THREE.Group();
+    ladderGroup.position.set(ladderX, ladderY + 1.2, icefallLadderZ);
+
+    const ladderAlumMat = new THREE.MeshStandardMaterial({ color: 0xCBD5E1, metalness: 0.85, roughness: 0.25 });
+    // Left & right extruded ladder rails
+    const railGeo = new THREE.BoxGeometry(0.12, 0.22, 14.0);
+    const leftRail = new THREE.Mesh(railGeo, ladderAlumMat);
+    leftRail.position.x = -0.7;
+    const rightRail = new THREE.Mesh(railGeo, ladderAlumMat);
+    rightRail.position.x = 0.7;
+    ladderGroup.add(leftRail, rightRail);
+
+    // Ladder rungs
+    const rungGeo = new THREE.CylinderGeometry(0.04, 0.04, 1.4, 6);
+    rungGeo.rotateZ(Math.PI / 2);
+    for (let r = -6; r <= 6; r++) {
+      const rung = new THREE.Mesh(rungGeo, ladderAlumMat);
+      rung.position.z = r * 1.0;
+      ladderGroup.add(rung);
+    }
+    ladderGroup.rotation.x = -0.15;
+    propsGroup.add(ladderGroup);
+
+    // [PROP SET C: LHOTSE FACE & HILLARY STEP FIXED SAFETY ROPES]
+    const ropePoints = [
+      new THREE.Vector3(12, getTerrainElevation(12, -90) + 0.8, -90),
+      new THREE.Vector3(18, getTerrainElevation(18, -130) + 0.8, -130),
+      new THREE.Vector3(22, getTerrainElevation(22, -170) + 0.8, -170),
+      new THREE.Vector3(-8, getTerrainElevation(-8, -230) + 0.8, -230),
+      new THREE.Vector3(6, getTerrainElevation(6, -290) + 0.8, -290),
+      new THREE.Vector3(2, getTerrainElevation(2, -340) + 0.8, -340)
+    ];
+    const ropeCurve = new THREE.CatmullRomCurve3(ropePoints);
+    const ropeGeo = new THREE.TubeGeometry(ropeCurve, 64, 0.06, 6, false);
+    const ropeMat = new THREE.MeshStandardMaterial({ color: 0xF59E0B, roughness: 0.5 });
+    const fixedRopeMesh = new THREE.Mesh(ropeGeo, ropeMat);
+    propsGroup.add(fixedRopeMesh);
+
+    // Snow pickets pinning the fixed lines
+    for (let p = 0; p < ropePoints.length; p++) {
+      const picketMat = new THREE.MeshStandardMaterial({ color: 0x94A3B8, metalness: 0.9, roughness: 0.2 });
+      const picket = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 1.8, 6), picketMat);
+      picket.position.copy(ropePoints[p]);
+      picket.position.y -= 0.6;
+      picket.rotation.z = 0.25;
+      propsGroup.add(picket);
+    }
+
+    // [PROP SET D: THE SUMMIT PINNACLE, BENCHMARK & DEV DAYS MONUMENT]
+    const summitX = 0;
+    const summitZ = -365;
+    const summitY = getTerrainElevation(summitX, summitZ);
+
+    const summitMonument = new THREE.Group();
+    summitMonument.position.set(summitX, summitY, summitZ);
+
+    // Bronze geodetic survey marker & scientific tripod
+    const tripodMat = new THREE.MeshStandardMaterial({ color: 0xF59E0B, metalness: 0.8, roughness: 0.3 });
+    for (let leg = 0; leg < 3; leg++) {
+      const angle = (leg / 3) * Math.PI * 2;
+      const legMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 2.6, 6), tripodMat);
+      legMesh.position.set(Math.sin(angle) * 0.7, 1.1, Math.cos(angle) * 0.7);
+      legMesh.rotation.x = Math.cos(angle) * 0.35;
+      legMesh.rotation.z = -Math.sin(angle) * 0.35;
+      summitMonument.add(legMesh);
+    }
+
+    // Commemorative Monolith Stele
+    const steleGeo = new THREE.BoxGeometry(1.4, 3.2, 0.4);
+    const steleMat = new THREE.MeshStandardMaterial({
+      color: 0x0F172A,
+      roughness: 0.2,
+      metalness: 0.8,
+      emissive: 0x0284C7,
+      emissiveIntensity: 0.35
+    });
+    const steleMesh = new THREE.Mesh(steleGeo, steleMat);
+    steleMesh.position.set(0, 2.8, 0);
+    summitMonument.add(steleMesh);
+
+    // Glowing Rotating Tech Crystal Header
+    const crystalGeo = new THREE.OctahedronGeometry(0.7, 0);
+    const crystalMat = new THREE.MeshStandardMaterial({
+      color: 0x38BDF8,
+      emissive: 0x38BDF8,
+      emissiveIntensity: 0.85,
+      metalness: 0.9,
+      roughness: 0.1,
+      wireframe: false
+    });
+    const summitCrystal = new THREE.Mesh(crystalGeo, crystalMat);
+    summitCrystal.position.set(0, 4.8, 0);
+    summitMonument.add(summitCrystal);
+
+    // 360-degree Golden Summit Solar Light
+    const summitLight = new THREE.PointLight(0xFDE68A, 3.5, 40);
+    summitLight.position.set(0, 5.5, 0);
+    summitMonument.add(summitLight);
+
+    propsGroup.add(summitMonument);
+
+    /* -------------------------------------------------------------------------
+       7. KINEMATIC CAMERA SPLINE & SMOOTH SCROLL CHOREOGRAPHY
+       ------------------------------------------------------------------------- */
+    // 11 Precision 3D Waypoints tracing the authentic Everest climbing trajectory
+    const camSplinePoints = [
+      new THREE.Vector3(38, 42, 355),   // 00: Base Camp Overlook (5,364m)
+      new THREE.Vector3(12, 42, 318),   // Base Camp Walkthrough (5,450m)
+      new THREE.Vector3(-18, 68, 245),  // Icefall Approach (5,650m)
+      new THREE.Vector3(18, 102, 172),  // 01: Khumbu Crevasse & Ladder Bridge (5,800m)
+      new THREE.Vector3(-6, 122, 98),   // 02: Western Cwm Gateway (6,150m)
+      new THREE.Vector3(10, 138, 12),   // Western Cwm Glacial Basin (6,400m)
+      new THREE.Vector3(-14, 162, -78), // 03: Lhotse Face Base (6,800m)
+      new THREE.Vector3(22, 202, -162), // Lhotse Sheer Blue Ice Ascent (7,200m)
+      new THREE.Vector3(-10, 236, -248),// 04: South Col / Death Zone Gateway (8,000m)
+      new THREE.Vector3(8, 258, -322),  // Hillary Step Knife-Edge Ridge (8,760m)
+      new THREE.Vector3(0, 282, -355)   // 05: The Summit Apex (8,849m)
+    ];
+
+    const lookSplinePoints = [
+      new THREE.Vector3(10, 36, 320),   // Looking down into Base Camp tents
+      new THREE.Vector3(-5, 55, 270),   // Looking towards Khumbu Icefall towers
+      new THREE.Vector3(6, 88, 195),    // Looking up into fractured seracs
+      new THREE.Vector3(0, 110, 115),   // Looking across crevasse ladder
+      new THREE.Vector3(0, 132, 38),    // Looking along sunlit Valley of Silence
+      new THREE.Vector3(-6, 156, -65),  // Looking up at towering Lhotse Face
+      new THREE.Vector3(16, 192, -145), // Looking straight up sheer blue ice
+      new THREE.Vector3(-6, 226, -225), // Looking out over windswept South Col
+      new THREE.Vector3(6, 246, -305),  // Looking along knife-edge ridge
+      new THREE.Vector3(0, 276, -365),  // Gazing directly at Hillary Step
+      new THREE.Vector3(0, 282, -430)   // 360 panoramic horizon over sea of clouds
+    ];
+
+    const cameraSpline = new THREE.CatmullRomCurve3(camSplinePoints, false, 'catmullrom', 0.25);
+    const lookSpline   = new THREE.CatmullRomCurve3(lookSplinePoints, false, 'catmullrom', 0.25);
+
+    // Scroll engine variables
+    let currentT = 0.0;
+    let targetT = 0.0;
+    let scrollVelocity = 0.0;
+    let lastTime = performance.now();
+    let prevT = 0.0;
+
+    // Normalized progress values for each of the 6 discrete chapters
+    const chapterFractions = [0.0, 0.20, 0.40, 0.60, 0.80, 1.0];
+
+    // Smooth scroll event listeners
+    window.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      const delta = e.deltaY * 0.00065;
+      targetT = Math.max(0.0, Math.min(1.0, targetT + delta));
+      initAudioOnGesture();
+    }, { passive: false });
+
+    // Touch support for mobile / tablets
+    let touchStartY = 0;
+    window.addEventListener('touchstart', (e) => {
+      touchStartY = e.touches[0].clientY;
+      initAudioOnGesture();
+    }, { passive: true });
+
+    window.addEventListener('touchmove', (e) => {
+      const touchY = e.touches[0].clientY;
+      const delta = (touchStartY - touchY) * 0.0016;
+      touchStartY = touchY;
+      targetT = Math.max(0.0, Math.min(1.0, targetT + delta));
+    }, { passive: true });
+
+    // Keyboard navigation
+    window.addEventListener('keydown', (e) => {
+      initAudioOnGesture();
+      if (e.key === 'ArrowDown' || e.key === 'PageDown' || e.key === ' ') {
+        targetT = Math.min(1.0, targetT + 0.06);
+      } else if (e.key === 'ArrowUp' || e.key === 'PageUp') {
+        targetT = Math.max(0.0, targetT - 0.06);
+      }
+    });
+
+    // Interactive SVG elevation profile clicks
+    const waypointNodes = document.querySelectorAll('.waypoint-node');
+    waypointNodes.forEach((node) => {
+      node.addEventListener('click', (e) => {
+        const wpIdx = parseInt(node.getAttribute('data-wp'));
+        if (!isNaN(wpIdx)) {
+          targetT = chapterFractions[wpIdx];
+          initAudioOnGesture();
+        }
+      });
+    });
+
+    // Pointer parallax
+    const mouseNorm = new THREE.Vector2();
+    window.addEventListener('mousemove', (e) => {
+      mouseNorm.x = (e.clientX / window.innerWidth) * 2.0 - 1.0;
+      mouseNorm.y = -(e.clientY / window.innerHeight) * 2.0 + 1.0;
+      blizzardUniforms.uMouseParallax.value.lerp(mouseNorm, 0.08);
+    });
+
+    /* -------------------------------------------------------------------------
+       8. ATMOSPHERIC AUDIO ENGINE (WEB AUDIO API SYNTH + YOUTUBE FALLBACK)
+       ------------------------------------------------------------------------- */
+    let audioContext = null;
+    let windGain = null;
+    let windFilter = null;
+    let isAudioPlaying = false;
+    let audioInitialized = false;
+
+    function initWebAudioBlizzard() {
+      if (audioInitialized) return;
+      try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return;
+        audioContext = new AudioCtx();
+
+        // 5-second procedural pink-noise buffer
+        const bufferSize = audioContext.sampleRate * 5;
+        const noiseBuffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate);
+        const output = noiseBuffer.getChannelData(0);
+        let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0;
+        for (let i = 0; i < bufferSize; i++) {
+          const white = Math.random() * 2 - 1;
+          b0 = 0.99886 * b0 + white * 0.0555179;
+          b1 = 0.99332 * b1 + white * 0.0750759;
+          b2 = 0.96900 * b2 + white * 0.1538520;
+          b3 = 0.86650 * b3 + white * 0.3104856;
+          b4 = 0.55000 * b4 + white * 0.5329522;
+          b5 = -0.7616 * b5 - white * 0.0168980;
+          output[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362) * 0.08;
+          b6 = white * 0.115926;
+        }
+
+        const whiteNoise = audioContext.createBufferSource();
+        whiteNoise.buffer = noiseBuffer;
+        whiteNoise.loop = true;
+
+        // Dynamic Resonant Biquad Bandpass Filter (simulating howling Himalayan gusts)
+        windFilter = audioContext.createBiquadFilter();
+        windFilter.type = 'bandpass';
+        windFilter.frequency.value = 320;
+        windFilter.Q.value = 2.8;
+
+        windGain = audioContext.createGain();
+        windGain.gain.value = 0.0;
+
+        whiteNoise.connect(windFilter);
+        windFilter.connect(windGain);
+        windGain.connect(audioContext.destination);
+
+        whiteNoise.start(0);
+        audioInitialized = true;
+      } catch (err) {
+        console.warn("Web Audio API unavailable:", err);
+      }
+    }
+
+    function toggleAudio() {
+      initWebAudioBlizzard();
+      if (!audioContext) return;
+
+      if (audioContext.state === 'suspended') {
+        audioContext.resume();
+      }
+
+      isAudioPlaying = !isAudioPlaying;
+      const audioBtn = document.getElementById('audio-toggle');
+      const audioStatus = document.getElementById('audio-status');
+
+      if (isAudioPlaying) {
+        audioBtn.classList.add('playing');
+        audioStatus.innerText = "ATMOSPHERE: ON";
+        if (windGain) {
+          windGain.gain.cancelScheduledValues(audioContext.currentTime);
+          windGain.gain.linearRampToValueAtTime(0.45, audioContext.currentTime + 1.2);
+        }
+      } else {
+        audioBtn.classList.remove('playing');
+        audioStatus.innerText = "ATMOSPHERE: OFF";
+        if (windGain) {
+          windGain.gain.cancelScheduledValues(audioContext.currentTime);
+          windGain.gain.linearRampToValueAtTime(0.0, audioContext.currentTime + 0.8);
+        }
+      }
+    }
+
+    function initAudioOnGesture() {
+      if (!audioInitialized) {
+        initWebAudioBlizzard();
+      }
+    }
+
+    document.getElementById('audio-toggle').addEventListener('click', toggleAudio);
+
+    /* -------------------------------------------------------------------------
+       9. HUD, TELEMETRY & CHAPTER CARDS SYNCHRONIZATION
+       ------------------------------------------------------------------------- */
+    const altEl = document.getElementById('alt-val');
+    const velEl = document.getElementById('vel-val');
+    const pressEl = document.getElementById('press-val');
+    const o2El = document.getElementById('o2-val');
+    const tempEl = document.getElementById('temp-val');
+    const coordEl = document.getElementById('coord-val');
+    const hypoxiaAlertEl = document.getElementById('hypoxia-alert');
+    const progressBar = document.getElementById('progress-bar');
+    const svgProgLine = document.getElementById('svg-progress-line');
+    const climberBeacon = document.getElementById('climber-beacon');
+    const chapterCards = document.querySelectorAll('.chapter-card');
+
+    function updateHUD(t, v) {
+      // 1. Altitude formula (5,364 m to 8,849 m)
+      const altitudeM = Math.round(5364 + t * (8849 - 5364));
+      altEl.innerText = altitudeM.toLocaleString('en-US');
+
+      // 2. Velocity display
+      const absV = Math.abs(v);
+      velEl.innerText = (absV > 0.05) ? `↑ ${absV.toFixed(1)} m/s` : `— 0.0 m/s`;
+
+      // 3. Atmospheric pressure (530 hPa down to 314 hPa at summit)
+      const press = Math.round(530 - t * (530 - 314));
+      pressEl.innerText = `${press} hPa`;
+
+      // 4. Oxygen saturation: 100% normalized baseline down to 33% at 8,849m
+      const o2 = Math.round(100 - t * 67);
+      o2El.innerText = `${o2}%`;
+
+      // 5. Temperature: -17°C down to -42°C
+      const temp = Math.round(-17 - t * 25);
+      tempEl.innerText = `${temp}°C`;
+
+      // 6. Coordinates (Interpolating from Base Camp to Summit)
+      if (t < 0.5) {
+        coordEl.innerText = `LAT: 27°59'17" N | LON: 86°51'05" E`;
+      } else {
+        coordEl.innerText = `LAT: 27°59'17" N | LON: 86°55'31" E`;
+      }
+
+      // 7. Death Zone Hypoxia Alert Trigger (Altitude >= 8,000m / t >= 0.757)
+      if (altitudeM >= 8000) {
+        hypoxiaAlertEl.style.display = 'block';
+      } else {
+        hypoxiaAlertEl.style.display = 'none';
+      }
+
+      // 8. Global Bottom Progress Bar
+      progressBar.style.width = `${(t * 100).toFixed(1)}%`;
+
+      // 9. SVG Elevation Profile Updates (Y from 220 down to 20)
+      const svgY = 220 - t * 200;
+      svgProgLine.setAttribute('d', `M22 220 L22 ${svgY.toFixed(1)}`);
+      climberBeacon.setAttribute('transform', `translate(22, ${svgY.toFixed(1)})`);
+
+      // 10. Update Active Waypoint Node
+      let currentChapter = 0;
+      for (let i = chapterFractions.length - 1; i >= 0; i--) {
+        if (t >= chapterFractions[i] - 0.08) {
+          currentChapter = i;
+          break;
+        }
+      }
+
+      waypointNodes.forEach((node, idx) => {
+        if (idx === currentChapter) {
+          node.classList.add('active');
+        } else {
+          node.classList.remove('active');
+        }
+      });
+
+      // 11. Staggered Center Narrative Chapter Card Transitions
+      chapterCards.forEach((card) => {
+        const cIdx = parseInt(card.getAttribute('data-chapter'));
+        if (cIdx === currentChapter) {
+          card.classList.add('active');
+        } else {
+          card.classList.remove('active');
+        }
+      });
+
+      // 12. Modulate Web Audio filter with altitude & gusts
+      if (windFilter && isAudioPlaying) {
+        const gust = Math.sin(performance.now() * 0.002) * 120;
+        windFilter.frequency.value = 280 + t * 450 + gust;
+      }
+    }
+
+    /* -------------------------------------------------------------------------
+       10. ANIMATION TICK & RENDER PIPELINE (STEADY 60 FPS)
+       ------------------------------------------------------------------------- */
+    const camPos = new THREE.Vector3();
+    const camTarget = new THREE.Vector3();
+    const camTangent = new THREE.Vector3();
+
+    function animate(time) {
+      requestAnimationFrame(animate);
+
+      const deltaSec = Math.max(0.001, (time - lastTime) * 0.001);
+      lastTime = time;
+
+      // Cubic damping smooth-scroll engine: lerp(current, target, 0.08)
+      currentT += (targetT - currentT) * 0.08;
+
+      // Instantaneous ascent velocity calculation
+      const dt = currentT - prevT;
+      prevT = currentT;
+      const instVel = (dt / deltaSec) * (8849 - 5364);
+      scrollVelocity += (instVel - scrollVelocity) * 0.12;
+
+      // Update shader uniforms
+      terrainUniforms.uTime.value = time * 0.001;
+      terrainUniforms.uAltitudeProgress.value = currentT;
+      skyUniforms.uTime.value = time * 0.001;
+      skyUniforms.uAltitude.value = currentT;
+      blizzardUniforms.uTime.value = time * 0.001;
+      blizzardUniforms.uWindShear.value = 1.0 + currentT * 2.2; // Savage winds at summit
+
+      // Compute Spline Trajectory Positions
+      cameraSpline.getPointAt(currentT, camPos);
+      lookSpline.getPointAt(currentT, camTarget);
+
+      // Camera collision buffer: ensure camera never clips into ground
+      const groundY = getTerrainElevation(camPos.x, camPos.z);
+      if (camPos.y < groundY + 3.2) {
+        camPos.y = groundY + 3.2;
+      }
+
+      camera.position.copy(camPos);
+      blizzardUniforms.uCamPos.value.copy(camPos);
+
+      // Tangent roll & banking for authentic mountaineer / drone gaze
+      cameraSpline.getTangentAt(currentT, camTangent);
+      const banking = camTangent.x * 0.35;
+      camera.up.set(banking, 1.0, 0.0).normalize();
+      camera.lookAt(camTarget);
+
+      // Rotate Summit Apex Crystal
+      summitCrystal.rotation.y = time * 0.0012;
+      summitCrystal.rotation.x = Math.sin(time * 0.001) * 0.2;
+
+      // Update HUD Metrics
+      updateHUD(currentT, scrollVelocity);
+
+      renderer.render(scene, camera);
+    }
+
+    requestAnimationFrame(animate);
+
+    /* -------------------------------------------------------------------------
+       11. RESIZE HANDLER & LIFECYCLE MANAGEMENT
+       ------------------------------------------------------------------------- */
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    });
+  </script>
+</body>
+</html>
